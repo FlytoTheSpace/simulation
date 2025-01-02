@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Random Experiment</title>
+
+    <style>
+        *{
+            padding: 0;
+            margin: 0;
+            font-family: sans-serif;
+            color: white;
+        }
+
+        .cell{
+            border: 1px black solid;
+            height: 6px;
+            width: 6px;
+        }
+        .green{ background: lime; } 
+        .blue{ background: blue; }
+        .white{ background: rgb(0, 0, 0); }
+        .black{ background: black; }
+        .consider{ background: rgb(0, 153, 255); }
+        .inqueue{ background: rgb(255, 80, 80); } 
+
+        body{
+            background: black;
+        }
+        main{
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+        .matrix{
+            width: fit-content;
+            height: fit-content;
+        }
+        button{
+            background: hsl(0, 0%, 20%);
+            border: none;
+            border-radius: 2px;
+            font-size: large;
+            padding: 7px;
+            transition: all 0.2s ease-in;
+        }
+        button:hover{
+            background: hsl(0, 0%, 50%);
+            transition: all 0.2s ease-in;
+        }
+        #data{
+            width: 800px;
+            padding: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <main>
+        <div id="data">
+            <button id="clearbtn">Clear</button>
+            <div id="metadata">
+            </div>
+        </div>
+        <div class="matrix"></div>
+    </main>
+    
+    <script src="./script.js"></script>
+</body>
+</html>
