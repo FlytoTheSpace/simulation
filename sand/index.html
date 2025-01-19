@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sand Simulation</title>
+    <style>
+        *{
+            padding: 0;
+            margin: 0;
+        }
+        :root{
+            --background: hsl(0, 0%, 10%);
+            --text: hsl(0, 0%, 100%);
+            --main-font: sans-serif;
+        }
+        body{
+            background: var(--background);
+            color: var(--text);
+            font-family: var(--main-font);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+        }
+        canvas{
+            border: 2px solid white;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="playground"></canvas>
+    <script src="script.js"></script>
+</body>
+</html>
