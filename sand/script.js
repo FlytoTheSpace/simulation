@@ -28,12 +28,16 @@ function noise(base, noiselvl, limit) {
     return noisedNumber;
 }
 class Matrix {
+    // All Static Functions/Variables
     static defaultsidelen = 10;
+    static defaultMatrixItemState = 0;
+    static defaultNoiselvl = 10;
     static errors = {
         InvalidHTMLCanvasElement: new Error("Invalid HTMLCanvasElement"),
         InvalidSideLengthPX: new Error("Invalid Side Length PX"),
         InvalidSideLength: new Error("Invalid Side Length"),
         InvalidXYCord: new Error("Invalid X/Y Cord"),
+        TargestDoesnotExist: new Error("Targest Does not Exist"),
         UnabletocreateContext: new Error("Unable to create Context"),
     };
     static statetoColorList = [
@@ -47,7 +51,7 @@ class Matrix {
     ];
     static statetoColor(state, noiselvl) {
         state = +state;
-        if (Number.isNaN(state) || !Number.isFinite(state) || state - state !== 0 || state >= Matrix.statetoColorList.length) {
+        if (Number.isNaN(state) || !Number.isFinite(state) || state < 0 || state >= Matrix.statetoColorList.length) {
             state = 0;
         }
         state = Math.floor(state);
@@ -58,8 +62,7 @@ class Matrix {
         return color;
     }
     ;
-    static defaultMatrixItemState = 0;
-    static defaultNoiselvl = 10;
+    // Local Variables
     _sidelength = Matrix.defaultsidelen;
     _element = null;
     _sidelengthPX = 0;
@@ -67,18 +70,65 @@ class Matrix {
     _matrix = [];
     context = null;
     volume = Matrix.defaultsidelen ** 2;
+    _cursorWrite = 1; // State to write when Clicking
+    _cursorDown = false; // Whether the Mouse is held down or not
     constructor(element, sidelength, sidelengthPX) {
         this.element = element;
         this.sidelength = sidelength;
         this.sidelengthPX = sidelengthPX;
         this.refreshunitlength();
+        this.element.addEventListener('mousedown', (e) => {
+            this._cursorDown = true;
+            this.mouseEvent(e);
+        });
+        this.element.addEventListener('mousemove', (e) => {
+            if (this._cursorDown === false) {
+                return;
+            }
+            ;
+            this.mouseEvent(e);
+        });
+        window.addEventListener('mouseup', (e) => {
+            if (this._cursorDown === false) {
+                return;
+            }
+            ;
+            this.mouseEvent(e);
+            this._cursorDown = false;
+        });
     }
+    // Internal Functions
     refreshVolume() {
         this.volume = this.sidelength ** 2;
     }
     refreshunitlength() {
         this._unitlength = this.sidelengthPX / this.sidelength;
     }
+    mouseEvent = (e) => {
+        const domrect = this.element.getBoundingClientRect();
+        const matrixCords = {
+            x: domrect.x,
+            y: domrect.y
+        };
+        const mouseCords = {
+            x: e.x - matrixCords.x,
+            y: e.y - matrixCords.y
+        };
+        const elementCords = {
+            x: Math.floor(mouseCords.x / this._unitlength),
+            y: Math.floor(mouseCords.y / this._unitlength)
+        };
+        if (elementCords.x >= this._sidelength || elementCords.x < 0) {
+            return;
+        }
+        ;
+        if (elementCords.y >= this._sidelength || elementCords.y < 0) {
+            return;
+        }
+        ;
+        this.drawGridElement(elementCords.x, elementCords.y, this._cursorWrite);
+    };
+    // Getters/Setters
     get element() {
         return this._element;
     }
@@ -99,7 +149,7 @@ class Matrix {
     }
     set sidelengthPX(sidelengthPX) {
         sidelengthPX = +sidelengthPX;
-        if (Number.isNaN(sidelengthPX) || !Number.isFinite(sidelengthPX) || sidelengthPX - sidelengthPX !== 0) {
+        if (Number.isNaN(sidelengthPX) || !Number.isFinite(sidelengthPX) || sidelengthPX < 0) {
             throw Matrix.errors.InvalidSideLengthPX;
         }
         ;
@@ -131,7 +181,7 @@ class Matrix {
             this.refreshVolume();
             return;
         }
-        if (Number.isNaN(sidelength) || !Number.isFinite(sidelength) || sidelength - sidelength !== 0) {
+        if (Number.isNaN(sidelength) || !Number.isFinite(sidelength) || sidelength < 0) {
             throw Matrix.errors.InvalidSideLengthPX;
         }
         ;
@@ -143,32 +193,27 @@ class Matrix {
         }
         ;
     }
-    drawGrid() {
+    // Interface Functions
+    drawGrid(state) {
         this._matrix = [];
-        const domrect = this.element.getBoundingClientRect();
-        console.log(domrect);
-        const absCords = {
-            x: domrect.x,
-            y: domrect.y
-        };
         this.refreshunitlength();
         this.context.strokeStyle = "white";
         // return;
         for (let i = 0; i < this.sidelength; i++) {
             this._matrix.push([]);
             for (let j = 0; j < this.sidelength; j++) {
-                this.drawGridElement(i, j, Matrix.defaultMatrixItemState);
+                this.drawGridElement(i, j, state ? state : Matrix.defaultMatrixItemState);
             }
         }
     }
     drawGridElement(x, y, state, stroke = true) {
         x = +x;
         y = +y;
-        if (Number.isNaN(x) || !Number.isFinite(x) || x - x !== 0 || x >= this.sidelength) {
+        if (Number.isNaN(x) || !Number.isFinite(x) || x < 0 || x >= this.sidelength) {
             throw Matrix.errors.InvalidXYCord;
         }
         ;
-        if (Number.isNaN(y) || !Number.isFinite(y) || y - y !== 0 || y >= this.sidelength) {
+        if (Number.isNaN(y) || !Number.isFinite(y) || y < 0 || y >= this.sidelength) {
             throw Matrix.errors.InvalidXYCord;
         }
         ;
@@ -203,7 +248,7 @@ async function main() {
     ;
     const sidelength = 16;
     matrix = new Matrix(canvasElement, sidelength, 500);
-    matrix.drawGrid();
+    matrix.drawGrid(0);
     return 0;
 }
 ;

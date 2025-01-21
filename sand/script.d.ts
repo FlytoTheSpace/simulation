@@ -1,11 +1,12 @@
+type cordinates = {
+    x: number;
+    y: number;
+};
 type matrixItem = {
     state: number;
     x: number;
     y: number;
-    px: {
-        x: number;
-        y: number;
-    };
+    px: cordinates;
 };
 declare const globalErrors: {
     InvalidNumber: Error;
@@ -16,17 +17,18 @@ declare function noise(base: number, noiselvl: number, limit?: {
 }): number;
 declare class Matrix {
     static readonly defaultsidelen = 10;
+    static defaultMatrixItemState: number;
+    static defaultNoiselvl: number;
     static readonly errors: {
         InvalidHTMLCanvasElement: Error;
         InvalidSideLengthPX: Error;
         InvalidSideLength: Error;
         InvalidXYCord: Error;
+        TargestDoesnotExist: Error;
         UnabletocreateContext: Error;
     };
-    static readonly statetoColorList: [number, number, number][];
+    static statetoColorList: [number, number, number][];
     static statetoColor(state: number, noiselvl?: number): string;
-    static defaultMatrixItemState: number;
-    static defaultNoiselvl: number;
     _sidelength: number;
     _element: HTMLCanvasElement;
     _sidelengthPX: number;
@@ -34,9 +36,12 @@ declare class Matrix {
     _matrix: matrixItem[][];
     context: CanvasRenderingContext2D;
     volume: number;
+    _cursorWrite: number;
+    _cursorDown: boolean;
     constructor(element: HTMLCanvasElement, sidelength: number, sidelengthPX: number);
     refreshVolume(): void;
     refreshunitlength(): void;
+    mouseEvent: (e: MouseEvent) => void;
     get element(): typeof this._element;
     set element(element: HTMLCanvasElement);
     get sidelengthPX(): typeof this._sidelengthPX;
@@ -48,7 +53,7 @@ declare class Matrix {
     */
     get sidelength(): typeof this._sidelength;
     set sidelength(sidelength: number);
-    drawGrid(): void;
+    drawGrid(state?: number): void;
     drawGridElement(x: number, y: number, state?: number, stroke?: boolean): void;
 }
 declare let matrix: Matrix;

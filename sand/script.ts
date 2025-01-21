@@ -1,11 +1,13 @@
+type cordinates = {
+    x: number,
+    y: number
+}
+
 type matrixItem = {
     state: number,
     x: number, // Order Cordinates
     y: number, // Order Cordinates
-    px: { // Relative Pixel Cordinates
-        x: number,
-        y: number,
-    }
+    px: cordinates
 }
 const globalErrors: {
     InvalidNumber: Error
@@ -25,31 +27,38 @@ function noise(base: number, noiselvl: number, limit?: {upper?: number, lower?: 
 
     let noisedNumber: number;
     noisedNumber = Math.round(noiseSide? base + noise: base - noise);
-
+    
     if (limit){
         if (limit.upper && ((Number.isNaN(limit.upper) || !Number.isFinite(limit.upper)))){ noisedNumber = Math.min(noisedNumber, limit.upper) }
         if (limit.lower && ((Number.isNaN(limit.lower) || !Number.isFinite(limit.lower)))){ noisedNumber = Math.min(noisedNumber, limit.lower) }
     }
-
+    
     return noisedNumber;
 }
 
 class Matrix{
+    
+    // All Static Functions/Variables
+
     static readonly defaultsidelen = 10;
+    static defaultMatrixItemState: number = 0;
+    static defaultNoiselvl: number = 10;
     static readonly errors: {
         InvalidHTMLCanvasElement: Error,
         InvalidSideLengthPX: Error,
         InvalidSideLength: Error,
         InvalidXYCord: Error,
+        TargestDoesnotExist: Error,
         UnabletocreateContext: Error,
     } = {
         InvalidHTMLCanvasElement: new Error("Invalid HTMLCanvasElement"),
         InvalidSideLengthPX: new Error("Invalid Side Length PX"),
         InvalidSideLength: new Error("Invalid Side Length"),
         InvalidXYCord: new Error("Invalid X/Y Cord"),
+        TargestDoesnotExist: new Error("Targest Does not Exist"),
         UnabletocreateContext: new Error("Unable to create Context"),
     };
-    static readonly statetoColorList: [number, number, number][] = [
+    static statetoColorList: [number, number, number][] = [
         // All These are HSL Color Codes
         [ 0, 0, 0 ], // Black
         [ 0, 0, 100 ], // White
@@ -60,7 +69,7 @@ class Matrix{
     ];
     static statetoColor(state: number, noiselvl?: number): string {
         state = +state;
-        if (Number.isNaN(state) || !Number.isFinite(state) || state - state !== 0 || state >= Matrix.statetoColorList.length){
+        if (Number.isNaN(state) || !Number.isFinite(state) || state < 0 || state >= Matrix.statetoColorList.length){
             state = 0;
         }
         state = Math.floor(state);
@@ -73,9 +82,8 @@ class Matrix{
 
         return color;
     };
-    static defaultMatrixItemState: number = 0;
-    static defaultNoiselvl: number = 10;
 
+    // Local Variables
     _sidelength: number = Matrix.defaultsidelen;
     _element: HTMLCanvasElement = null as unknown as HTMLCanvasElement;
     _sidelengthPX: number = 0;
@@ -83,6 +91,9 @@ class Matrix{
     _matrix: matrixItem[][] = [];
     context: CanvasRenderingContext2D = null as unknown as CanvasRenderingContext2D;
     volume: number = Matrix.defaultsidelen ** 2;
+    
+    _cursorWrite: number = 1; // State to write when Clicking
+    _cursorDown: boolean = false; // Whether the Mouse is held down or not
 
     constructor(element: HTMLCanvasElement, sidelength: number, sidelengthPX: number){
         this.element = element;
@@ -90,14 +101,56 @@ class Matrix{
         this.sidelengthPX = sidelengthPX;
 
         this.refreshunitlength()
+
+
+        this.element.addEventListener('mousedown', (e)=>{
+            this._cursorDown = true;
+            this.mouseEvent(e);
+        });
+        this.element.addEventListener('mousemove', (e)=>{
+            if (this._cursorDown === false){ return; };
+            this.mouseEvent(e)
+        });
+        window.addEventListener('mouseup', (e: MouseEvent)=>{
+            if (this._cursorDown === false){
+                return;
+            };
+            this.mouseEvent(e);
+            this._cursorDown = false;
+        });
     }
     
+    // Internal Functions
     refreshVolume(): void {
         this.volume = this.sidelength**2
     }
     refreshunitlength(): void{
         this._unitlength = this.sidelengthPX/this.sidelength;
     }
+
+    mouseEvent = (e: MouseEvent): void =>{
+        const domrect: DOMRect = this.element.getBoundingClientRect();
+
+    
+        const matrixCords: cordinates = {
+            x: domrect.x,
+            y: domrect.y
+        }
+        const mouseCords: cordinates = {
+            x: e.x - matrixCords.x,
+            y: e.y - matrixCords.y
+        }
+        const elementCords: cordinates = {
+            x: Math.floor(mouseCords.x/this._unitlength),
+            y: Math.floor(mouseCords.y/this._unitlength)
+        }
+        if (elementCords.x >= this._sidelength || elementCords.x < 0){ return; };
+        if (elementCords.y >= this._sidelength || elementCords.y < 0){ return; };
+
+        this.drawGridElement(elementCords.x, elementCords.y, this._cursorWrite)
+    };
+
+    // Getters/Setters
     get element(): typeof this._element{
         return this._element;
     }
@@ -113,7 +166,7 @@ class Matrix{
     }
     set sidelengthPX(sidelengthPX: number){
         sidelengthPX = +sidelengthPX;
-        if (Number.isNaN(sidelengthPX) || !Number.isFinite(sidelengthPX) || sidelengthPX - sidelengthPX !== 0){ throw Matrix.errors.InvalidSideLengthPX};
+        if (Number.isNaN(sidelengthPX) || !Number.isFinite(sidelengthPX) || sidelengthPX < 0){ throw Matrix.errors.InvalidSideLengthPX};
         const lengthLimit = Math.min(window.innerHeight, window.innerWidth)
         if (sidelengthPX > lengthLimit){ sidelengthPX = lengthLimit };
         this._sidelengthPX = sidelengthPX;
@@ -139,7 +192,7 @@ class Matrix{
             this.refreshVolume();
             return;
         }
-        if (Number.isNaN(sidelength) || !Number.isFinite(sidelength) || sidelength - sidelength !== 0){ throw Matrix.errors.InvalidSideLengthPX };
+        if (Number.isNaN(sidelength) || !Number.isFinite(sidelength) || sidelength < 0){ throw Matrix.errors.InvalidSideLengthPX };
         sidelength = Math.round(sidelength);
         this._sidelength = sidelength;
         this.refreshVolume();
@@ -147,16 +200,9 @@ class Matrix{
         if( this.sidelengthPX !== 0){ this.refreshunitlength(); };
     }
     
-    drawGrid(): void {
+    // Interface Functions
+    drawGrid(state?: number): void {
         this._matrix = [];
-        
-        const domrect: DOMRect = this.element.getBoundingClientRect();
-
-        console.log(domrect)
-        const absCords: {x: number, y: number} = {
-            x: domrect.x,
-            y: domrect.y
-        }
         this.refreshunitlength();
         this.context.strokeStyle = "white";
         
@@ -164,7 +210,7 @@ class Matrix{
         for(let i = 0; i<this.sidelength; i++){
             this._matrix.push([]);
             for(let j = 0; j<this.sidelength; j++){
-                this.drawGridElement(i, j, Matrix.defaultMatrixItemState);
+                this.drawGridElement(i, j, state? state : Matrix.defaultMatrixItemState);
             }
         }
     }
@@ -173,8 +219,8 @@ class Matrix{
         x = + x;
         y = + y;
         
-        if (Number.isNaN(x) || !Number.isFinite(x) || x - x !== 0 || x >= this.sidelength ){ throw Matrix.errors.InvalidXYCord };
-        if (Number.isNaN(y) || !Number.isFinite(y) || y - y !== 0 || y >= this.sidelength ){ throw Matrix.errors.InvalidXYCord };
+        if (Number.isNaN(x) || !Number.isFinite(x) || x < 0 || x >= this.sidelength ){ throw Matrix.errors.InvalidXYCord };
+        if (Number.isNaN(y) || !Number.isFinite(y) || y < 0 || y >= this.sidelength ){ throw Matrix.errors.InvalidXYCord };
 
         x = Math.floor(x);
         y = Math.floor(y);
@@ -207,7 +253,7 @@ async function main(): Promise<0 | 1> {
     const sidelength = 16;
     matrix = new Matrix(canvasElement, sidelength, 500);
 
-    matrix.drawGrid();
+    matrix.drawGrid(0);
 
     return 0;
 };
