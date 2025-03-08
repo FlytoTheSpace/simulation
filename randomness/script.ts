@@ -8,11 +8,11 @@ const data = {
 const probabilityAssignedClass = "consider";
 const inqueueClass = "inqueue";
 
-
+let currentColor: celltypes = "green"
 function cellClickEvent(e: MouseEvent): void {
     const target: HTMLDivElement = (e.target as HTMLDivElement);
-    changeCellClass(target, "green")
-    changeAdjacent(target, "green", "blue");
+    changeCellClass(target, currentColor)
+    changeAdjacent(target, currentColor, "blue");
 }
 
 async function changeAdjacent(target: HTMLDivElement, changeto: celltypes, changefrom: celltypes): Promise<void> {

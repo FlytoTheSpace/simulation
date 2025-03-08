@@ -5,6 +5,7 @@ declare const data: {
 };
 declare const probabilityAssignedClass = "consider";
 declare const inqueueClass = "inqueue";
+declare let currentColor: celltypes;
 declare function cellClickEvent(e: MouseEvent): void;
 declare function changeAdjacent(target: HTMLDivElement, changeto: celltypes, changefrom: celltypes): Promise<void>;
 type celltypes = "blue" | "white" | "black" | "green";

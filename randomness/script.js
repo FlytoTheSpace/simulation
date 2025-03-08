@@ -6,10 +6,11 @@ const data = {
 };
 const probabilityAssignedClass = "consider";
 const inqueueClass = "inqueue";
+let currentColor = "green";
 function cellClickEvent(e) {
     const target = e.target;
-    changeCellClass(target, "green");
-    changeAdjacent(target, "green", "blue");
+    changeCellClass(target, currentColor);
+    changeAdjacent(target, currentColor, "blue");
 }
 async function changeAdjacent(target, changeto, changefrom) {
     const queue = [target];

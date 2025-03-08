@@ -2,31 +2,6 @@
 const globalErrors = {
     InvalidNumber: new Error("Invalid Number")
 };
-function noise(base, noiselvl, limit) {
-    base = +base;
-    noiselvl = +noiselvl;
-    if (Number.isNaN(base) || !Number.isFinite(base)) {
-        throw globalErrors.InvalidNumber;
-    }
-    ;
-    if (Number.isNaN(noiselvl) || !Number.isFinite(noiselvl)) {
-        noiselvl = 1;
-    }
-    ;
-    const noiseSide = Boolean(Math.round(Math.random()));
-    const noise = Math.random() * noiselvl;
-    let noisedNumber;
-    noisedNumber = Math.round(noiseSide ? base + noise : base - noise);
-    if (limit) {
-        if (limit.upper && ((Number.isNaN(limit.upper) || !Number.isFinite(limit.upper)))) {
-            noisedNumber = Math.min(noisedNumber, limit.upper);
-        }
-        if (limit.lower && ((Number.isNaN(limit.lower) || !Number.isFinite(limit.lower)))) {
-            noisedNumber = Math.min(noisedNumber, limit.lower);
-        }
-    }
-    return noisedNumber;
-}
 class Matrix {
     // All Static Functions/Variables
     static defaultsidelen = 10;
@@ -44,10 +19,6 @@ class Matrix {
         // All These are HSL Color Codes
         [0, 0, 0], // Black
         [0, 0, 100], // White
-        [0, 100, 50], // Red
-        [240, 100, 50], // Blue
-        [120, 100, 50], // Green
-        [272, 100, 50], // Purple
     ];
     static statetoColor(state, noiselvl) {
         state = +state;
@@ -58,7 +29,7 @@ class Matrix {
         if (!noiselvl || state === 0) {
             noiselvl = 0;
         }
-        const color = `hsl(${noise(Matrix.statetoColorList[state][0], noiselvl, { upper: 360, lower: 0 })}, ${noise(Matrix.statetoColorList[state][1], noiselvl, { upper: 100, lower: 0 })}%, ${noise(Matrix.statetoColorList[state][2], noiselvl, { upper: 100, lower: 0 })}%)`;
+        const color = `hsl(${Matrix.statetoColorList[state][0]}, ${Matrix.statetoColorList[state][1]}%, ${Matrix.statetoColorList[state][2]}%)`;
         return color;
     }
     ;
@@ -238,6 +209,41 @@ class Matrix {
         this.context.strokeRect(matrixItem.px.x, matrixItem.px.y, this._unitlength, this._unitlength);
         this._matrix[matrixItem.x][matrixItem.y] = matrixItem;
     }
+    drawNextGeneration() {
+        for (let i = 0; i < this._sidelength; i++) {
+            for (let j = 0; j < this._sidelength; j++) {
+                const neighbours = {
+                    topLeft: { x: i - 1, y: j + 1 },
+                    top: { x: i, y: j + 1 },
+                    topRight: { x: i + 1, y: j + 1 },
+                    left: { x: i - 1, y: j },
+                    right: { x: i + 1, y: j },
+                    bottomLeft: { x: i - 1, y: j - 1 },
+                    bottom: { x: i, y: j - 1 },
+                    bottomRight: { x: i + 1, y: j - 1 },
+                };
+                let litNeighbours = 0;
+                for (let i in neighbours) {
+                    const cords = neighbours[i];
+                    if ((cords.x < 0) || (cords.y < 0) || (cords.x >= this._sidelength) || (cords.y >= this._sidelength)) {
+                        continue;
+                    }
+                    ;
+                    const state = this._matrix[cords.x][cords.y].state;
+                    if (state !== 1) {
+                        continue;
+                    }
+                    ;
+                    litNeighbours++;
+                }
+                if (litNeighbours !== 3) {
+                    this.drawGridElement(i, j, 0, true);
+                    continue;
+                }
+                this.drawGridElement(i, j, 1, true);
+            }
+        }
+    }
 }
 let matrix;
 async function main() {
@@ -246,8 +252,8 @@ async function main() {
         return 1;
     }
     ;
-    const sidelength = 16;
-    const baseWidth = 500;
+    const sidelength = 64;
+    const baseWidth = 800;
     matrix = new Matrix(canvasElement, sidelength, baseWidth);
     matrix.drawGrid(0);
     const elementsElement = document.querySelector("#elements");
